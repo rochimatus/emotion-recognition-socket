@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content %}
+
+    <div class="d-flex justify-content-center mt-auto">
+        <div id="row container">
+            <canvas id="canvasOutput" style="width: 500; height:375" hidden></canvas>
+            <video autoplay="true" id="videoElement" hidden></video>
+        </div>
+        <div class="row mb-3">
+            <img id="image">
+        </div>        
+        <div class="row mb-3" style="padding:50px">
+            <canvas id="myChart" width="300" height="300"></canvas>
+        </div>
+    </div>
+
+
+<script>
+    // var intervalID = setInterval(update_value, 1000);
+    var temp;
+
+    function update_value(data) {
+        temp = data[0];
+        myChart.data.datasets[0].data = temp;
+        myChart.update();
+    };
+</script>
+<script>
+    const labels = ['angry', 'disgust', 'happy', 'fear', 'sad', 'surprise', 'neutral']
+    var ctx = document.getElementById('myChart');
+    var myChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'result',
+                data: temp,
+                                    backgroundColor: [
+                  'rgba(255, 99, 132, 0.2)',
+                  'rgba(255, 159, 64, 0.2)',
+                  'rgba(255, 205, 86, 0.2)',
+                  'rgba(75, 192, 192, 0.2)',
+                  'rgba(54, 162, 235, 0.2)',
+                  'rgba(153, 102, 255, 0.2)',
+                  'rgba(201, 203, 207, 0.2)'
+                ],
+                borderColor: [
+                  'rgb(255, 99, 132)',
+                  'rgb(255, 159, 64)',
+                  'rgb(255, 205, 86)',
+                  'rgb(75, 192, 192)',
+                  'rgb(54, 162, 235)',
+                  'rgb(153, 102, 255)',
+                  'rgb(201, 203, 207)'
+                ],
+                borderWidth: 1
+              }]
+        },
+        options: {
+            indexAxis: 'y',
+            scales: {
+                yAxes: [{
+                    ticks: {
+                        beginAtZero: true
+                    }
+                }]
+            }
+        }
+    })
+</script>
+<script src="https://cdn.socket.io/socket.io-1.0.0.js"></script>
+<!-- <script src="opencv.js" type="text/javascript"></script> -->
+<script>
+    var socket = io('https://c92b-180-251-101-169.ap.ngrok.io');
+
+socket.on('connect', function(){
+    console.log("Connected...!", socket.connected)
+});
+
+const video = document.querySelector("#videoElement");
+
+video.width = 500; 
+video.height = 375; ;
+
+if (navigator.mediaDevices.getUserMedia) {
+    navigator.mediaDevices.getUserMedia({ video: true })
+    .then(function (stream) {
+        video.srcObject = stream;
+        video.play();
+    })
+    .catch(function (err0r) {
+        console.log(err0r)
+        console.log("Something went wrong!");
+    });
+}
+
+// let src = new cv.Mat(video.height, video.width, cv.CV_8UC4);
+// let dst = new cv.Mat(video.height, video.width, cv.CV_8UC1);
+// let cap = new cv.VideoCapture(video);
+
+const FPS = 30;
+// const cnv = document.getElementById("canvasOutput");
+
+// const cnv = document.createElement('canvas');
+// ctx = cnv.getContext('2d');
+
+setInterval(() => {
+    // cap.read(src);
+    const cnv = document.getElementById("canvasOutput");
+
+    // const cnv = document.createElement('canvas');
+    cnv.width = video.width;
+    cnv.height = video.height;
+
+    ctx = cnv.getContext('2d');
+
+    ctx.drawImage(video, 0, 0, 500, 375);
+
+    var type = "image/png"
+    var data = cnv.toDataURL(type);
+    data = data.replace('data:' + type + ';base64,', ''); //split off junk at the beginning
+    // console.log(data);
+    socket.emit('image', data);
+}, 10000/FPS);
+
+
+socket.on('response_back', function(data){
+    // const image_id = document.getElementById('blu');
+    // image_id.innerText = image
+    const image_id = document.getElementById('image');
+    image_id.src = data[0];
+    image_id.height = video.height
+    image_id.width = video.width
+    console.log("img masuk")
+    update_value(data[1])
+});
+</script>
+{% endblock %}
