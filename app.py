@@ -54,9 +54,9 @@ def image(data_image):
     # send_back = jsonify([stringData, predictions])
     # emit the frame back
     # print(type(predictions))
-    predictions_list = predictions.tolist() if len(predictions)> 0 else [] 
+    # predictions_list = predictions.tolist() if len(predictions)> 0 else [] 
     # print(type(predictions_list))
-    result = [stringData, predictions_list]
+    result = [stringData, predictions]
     emit('response_back', result)
 
     # emit('predictions', predictions_list)
